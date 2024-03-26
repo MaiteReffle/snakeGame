@@ -70,7 +70,7 @@ class App {
                 sessionStorage.setItem('usuario_activo',JSON.stringify(this.usuario_actual))
                 usuario_activo = this.usuario_actual.usuario
                 // Redirigo al juego
-                location.href="./juego.html"
+                location.href="../pages/juego.html"
         // Si contraseña incorrecta, error!
         } else {
             let contrasenia_incorrecta = document.createElement('p')

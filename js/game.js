@@ -58,7 +58,7 @@ function handleGameOver() {  //Lo que pasa cuando perdemos
     var botonSalir = document.getElementById("botonSalir");
     botonSalir.addEventListener("click", (event) => {
         event.preventDefault();
-        window.location.href = "index.html"; //Vuelvo a index
+        window.location.href = "../index.html"; //Vuelvo a index
     })
 }
 

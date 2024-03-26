@@ -1,5 +1,7 @@
 // Loguearse, HTML login
 let app = new App()
+
+// Evento submit
 document.querySelector('#iniciarSesion').addEventListener('submit', (e)=> {
     e.preventDefault()
 

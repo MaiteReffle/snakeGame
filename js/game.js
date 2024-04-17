@@ -1,16 +1,17 @@
 //Declaro vairables, preparo elementos que voy a necesitar
-usuario_activo = JSON.parse(sessionStorage.getItem('usuario_activo')) //Pongo en el html el nombre de usuario y la puntuación máxima almacenada en el storage
-let puntuacion_maxima = document.createElement('div')
-puntuacion_maxima.innerText = `High Score: ${usuario_activo.puntuacionMaxima}`
-details.append(puntuacion_maxima)
-let nombre_usuario = document.createElement('h1')
-nombre_usuario.innerText = `Bienvenido, ${usuario_activo.usuario}!`
-welcome.append(nombre_usuario)
+let usuario_activo = JSON.parse(sessionStorage.getItem('usuario_activo')) //Pongo en el html el nombre de usuario y la puntuación máxima almacenada en el storage
+let $puntuacion_maxima = document.createElement('div')
+$puntuacion_maxima.innerText = `High Score: ${usuario_activo.puntuacionMaxima}`
+details.append($puntuacion_maxima)
+let $nombre_usuario = document.createElement('h1')
+$nombre_usuario.innerText = `Bienvenido, ${usuario_activo.usuario}!`
+welcome.append($nombre_usuario)
 
 // Elementos que voy a necesitar para la funcionalidad del juego
-let playBoard = document.querySelector('.play-board')
-let scoreElement = document.querySelector('.score')
-let mensaje = document.querySelector('#message')
+let $playBoard = document.querySelector('.play-board')
+let $scoreElement = document.querySelector('.score')
+let $levelEelement = document.querySelector('.level')
+let $mensaje = document.querySelector('#message')
 let gameOver = false
 let foodX, foodY
 let snakeBody = []
@@ -18,6 +19,10 @@ let snakeX = 5, snakeY = 10
 let velocityX = 0, velocityY = 0 
 let setInvervalId
 let score = 0
+let level = 0
+let velocity = 1
+let gameInterval
+let gameSpeedDelay = 160
 
 //Lo que pasa cuando perdemos
 function handleGameOver() {  //Lo que pasa cuando perdemos
@@ -25,51 +30,61 @@ function handleGameOver() {  //Lo que pasa cuando perdemos
     //Si la puntuación es mayor a la que está en storage, la guardo
     if (score > usuario_activo.puntuacionMaxima) {
         usuario_activo.puntuacionMaxima = score
-        console.log(usuario_activo.puntuacionMaxima)
-        usuarios = JSON.parse(localStorage.getItem('usuarios'))
-        usuarios.forEach((elm) => {
+        USERS.forEach((elm) => {
             elm.usuario == usuario_activo.usuario && (elm.puntuacionMaxima = score)
         })
-        localStorage.setItem('usuarios',JSON.stringify(usuarios))
+        localStorage.setItem('usuarios',JSON.stringify(USERS))
         //Tambien la guardo en la session por si quiere seguir jugando, para que ya me actualice la UI
         sessionStorage.setItem('usuario_activo',JSON.stringify(usuario_activo)) 
 
     }
 
-    //Usando el template del HTML para que aparezca el cartel de si quiere seguir jugando o salir
-    let template = document.querySelector('template') 
-    let contenido = template.content
-    let clon = contenido.cloneNode(true)
-    document.body.appendChild(clon)
-    let alerta = document.querySelector('.gameOver')
-    alerta.textContent = `Perdiste, tu puntaje fue de ${score}. Volver a intentarlo?`
-    
-    //Cuando apreta volver a jugar, quiero que refrezce la página
-    var botonContinuar = document.getElementById("botonContinuar");
-    // Agregar un controlador de eventos al hacer clic en el botón
-    botonContinuar.addEventListener("click", (event) => {
-        // Prevenir el comportamiento predeterminado del botón de submit, que es enviar un formulario
-        event.preventDefault();
-        // Recargar la página
-        location.reload();
-    });
-
-    //Si apreta salir, quiero que me mande al index
-    var botonSalir = document.getElementById("botonSalir");
-    botonSalir.addEventListener("click", (event) => {
-        event.preventDefault();
-        window.location.href = "../index.html"; //Vuelvo a index
-    })
-}
+    const swalWithBootstrapButtons = Swal.mixin({
+        customClass: {
+          confirmButton: "btn btn-success",
+          cancelButton: "btn btn-danger"
+        },
+        buttonsStyling: false
+      });
+      swalWithBootstrapButtons.fire({
+        title: `Perdiste, tu puntaje fue de ${score}`,
+        text: "Volver a intentarlo?",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Sí!",
+        cancelButtonText: "Salir :(",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          swalWithBootstrapButtons.fire({
+            title: "Preparate!",
+            text: "Volverás a jugar",
+            icon: "success"
+          }).then(()=> {
+            location.reload()
+          });
+        } else if (
+          /* Read more about handling dismissals below */
+          result.dismiss === Swal.DismissReason.cancel
+        ) {
+          swalWithBootstrapButtons.fire({
+            title: "Saliste de la sesión",
+            text: "Nos vemos la próxima :)",
+            icon: "success"
+          }).then(()=> {
+            window.location.href = "../index.html"
+          });
+        }
+      });
+    }
 
 //Función para randomizar la posición de la food en la pantalla
-function foodPosition () {
+function foodPosition() {
     foodX = Math.floor(Math.random() * 30) + 1 // Número random de 0 a 30 - si quiero cambiar tamaño de grid cambio el 30
     foodY = Math.floor(Math.random() * 30) + 1 // Número random de 0 a 30
 }
 
 //Función para que la snake se vaya moviendo a medida que el jugador usa las flechas
-function snakeDirection (e) {
+function snakeDirection(e) {
     if (e.key === 'ArrowDown') {
         if (velocityY != -1) {
             velocityX = 0 
@@ -97,7 +112,7 @@ function snakeDirection (e) {
         }
     //Si apreta algo que no sean las felchas, doy mensaje de error
     } else { 
-        mensaje.innerText = 'Utilice las flechas para jugar!'
+        $mensaje.innerText = 'Utilice las flechas para jugar!'
     }
 }
 
@@ -115,7 +130,21 @@ const initGame = () => {
         snakeBody.push([snakeX,snakeY])
         //Tambien aumento el score en uno y actualizo el score en la UI
         score ++
-        scoreElement.innerHTML = `Score: ${score}`
+        fetch('../json/data.json')
+          .then((res) => res.json())
+          .then((data) => {
+            data.forEach((e)=>{
+              if (e.score === score) {
+                level = e.level
+                velocity = e.velocity
+                increaseSpeed(velocity)
+              }
+            })
+          })
+        clearInterval(setIntervalId)
+        setIntervalId = setInterval(initGame,gameSpeedDelay)
+        $scoreElement.innerHTML = `Score: ${score}`
+        $levelEelement.innerHTML = `Level: ${level}`
     }
 
     //Le voy agregando mas longitud ATRÁS de la ppal por cada vez que pasa por la food, esto lo hago en la longitud del array que fui armando
@@ -127,9 +156,10 @@ const initGame = () => {
     snakeBody[0] = [snakeX,snakeY]
 
     //Despues la voy cambiando
-    snakeX += velocityX
-    snakeY += velocityY
+    snakeX += velocityX 
+    snakeY += velocityY 
 
+    
     //Si salgo de los límites tengo que perder (reiniciar)
     if (snakeX <= 0 || snakeX > 30 || snakeY <= 0 || snakeY > 30) { 
         gameOver = true
@@ -146,14 +176,19 @@ const initGame = () => {
     }
     
     // Agrego todos los divs
-    playBoard.innerHTML = juego
+    $playBoard.innerHTML = juego
 }
 
 // Posición random inicial
 foodPosition()
 
 // Ejecuto el juego
-setIntervalId = setInterval(initGame,130)
+setIntervalId = setInterval(initGame,gameSpeedDelay)
 
 // Evento para detectar movimientos del jugador
 document.addEventListener("keydown", snakeDirection)
+// nivel()
+
+function increaseSpeed(e) {
+  gameSpeedDelay = gameSpeedDelay / e
+}

@@ -1,0 +1,22 @@
+{
+  "name": "snake_game",
+  "version": "1.0.0",
+  "description": "snake game for coderhouse course",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MaiteReffle/snakeGame.git"
+  },
+  "keywords": [
+    "javascript"
+  ],
+  "author": "Maite Reffle",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MaiteReffle/snakeGame/issues"
+  },
+  "homepage": "https://github.com/MaiteReffle/snakeGame#readme"
+}
